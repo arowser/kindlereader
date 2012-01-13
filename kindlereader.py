@@ -536,6 +536,14 @@ class KindleReader(object):
         user = reader.getUserInfo()
         reader.buildSubscriptionList()
         categoires = reader.getCategories()
+        TAGS = ['starred','like','read','keep-unread', 'link', 'post', 
+                'created', 'frest', 'broadcast', 'broadcast-friends',
+                'reding-list', 'track-emailed','tracking-body-link-used',
+                'tracking-item-link-used', 'tracking-kept-unread']
+        for tag in TAGS:
+            starred_c = Category(reader, tag, GoogleReader.TAG_STARRED)
+            categoires.append(starred_c)
+
         
         select_categories = self.get_config('reader', 'select_categories')
         skip_categories = self.get_config('reader', 'skip_categories')
@@ -563,6 +571,11 @@ class KindleReader(object):
             skiped = False
             if selects:
                 if category.label.encode("utf-8") in selects:
+                    if  category.label in TAGS:
+                        sf = SpecialFeed(reader, category.label)
+                        sf.title = category.label
+                        feeds[sf.id] = sf
+                        continue
                     fd = category.getFeeds()
                     for f in fd:
                         if f.id not in feeds:
@@ -624,15 +637,15 @@ class KindleReader(object):
         
                 item_idx = 1
                 for item in feed_data['items']:
-                    for category in item.get('categories', []):
-                        if category.endswith('/state/com.google/reading-list'):
+                    #for category in item.get('categories', []):
+                        #if category.endswith('/state/com.google/reading-list'):
                             content = item.get('content', item.get('summary', {})).get('content', '')
                             url     = None
 
                             for alternate in item.get('alternate', []):
                                 if alternate.get('type', '') == 'text/html':
                                     url = alternate['href']
-                                    break
+                                   # break
                             
                             if content:
                                 item['content'], images = self.parse_summary(content, url)
@@ -642,7 +655,7 @@ class KindleReader(object):
                             
                                 downing_images += images
                             
-                            break
+                            #break
 
                 feed.item_count = len(feed.items)
                 updated_items += feed.item_count
